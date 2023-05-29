@@ -61,6 +61,7 @@ type redisMetadata struct {
 	listLength           int64
 	activationListLength int64
 	listName             string
+	metricName           string
 	databaseIndex        int
 	connectionInfo       redisConnectionInfo
 	scalerIndex          int
@@ -233,6 +234,10 @@ func parseRedisMetadata(config *ScalerConfig, parserFn redisAddressParser) (*red
 		meta.activationListLength = activationListLength
 	}
 
+	if val, ok := config.TriggerMetadata["metricName"]; ok {
+		meta.metricName = val
+	}
+
 	if val, ok := config.TriggerMetadata["listName"]; ok {
 		meta.listName = val
 	} else {
@@ -257,7 +262,13 @@ func (s *redisScaler) Close(context.Context) error {
 
 // GetMetricSpecForScaling returns the metric spec for the HPA
 func (s *redisScaler) GetMetricSpecForScaling(context.Context) []v2.MetricSpec {
-	metricName := util.NormalizeString(fmt.Sprintf("redis-%s", s.metadata.listName))
+	metricBaseName := ""
+	if s.metadata.metricName != "" {
+		metricBaseName = s.metadata.metricName
+	} else {
+		metricBaseName = s.metadata.listName
+	}
+	metricName := util.NormalizeString(fmt.Sprintf("redis-%s", metricBaseName))
 	externalMetric := &v2.ExternalMetricSource{
 		Metric: v2.MetricIdentifier{
 			Name: GenerateMetricNameWithIndex(s.metadata.scalerIndex, metricName),

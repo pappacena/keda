@@ -36,6 +36,8 @@ var testRedisMetadata = []parseRedisMetadataTestData{
 	{map[string]string{}, true, map[string]string{}},
 	// properly formed listName
 	{map[string]string{"listName": "mylist", "listLength": "10", "addressFromEnv": "REDIS_HOST", "passwordFromEnv": "REDIS_PASSWORD"}, false, map[string]string{}},
+	// properly formed listName forcing metricName
+	{map[string]string{"listName": "mylist", "metricName": "my-metric-1", "listLength": "10", "addressFromEnv": "REDIS_HOST", "passwordFromEnv": "REDIS_PASSWORD"}, false, map[string]string{}},
 	// properly formed hostPort
 	{map[string]string{"listName": "mylist", "listLength": "10", "hostFromEnv": "REDIS_HOST", "portFromEnv": "REDIS_PORT", "passwordFromEnv": "REDIS_PASSWORD"}, false, map[string]string{}},
 	// properly formed hostPort
@@ -62,6 +64,7 @@ var testRedisMetadata = []parseRedisMetadataTestData{
 var redisMetricIdentifiers = []redisMetricIdentifier{
 	{&testRedisMetadata[1], 0, "s0-redis-mylist"},
 	{&testRedisMetadata[1], 1, "s1-redis-mylist"},
+	{&testRedisMetadata[2], 1, "s1-redis-my-metric-1"},
 }
 
 func TestRedisParseMetadata(t *testing.T) {
@@ -97,7 +100,7 @@ func TestRedisGetMetricSpecForScaling(t *testing.T) {
 		metricSpec := mockRedisScaler.GetMetricSpecForScaling(context.Background())
 		metricName := metricSpec[0].External.Metric.Name
 		if metricName != testData.name {
-			t.Error("Wrong External metric source name:", metricName)
+			t.Error("Wrong External metric source name:", metricName, testData.name)
 		}
 	}
 }
